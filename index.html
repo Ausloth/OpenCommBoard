@@ -509,6 +509,41 @@
       renderGrid();
     }
 
+    function handleDrop(sourceIndex, targetIndex) {
+      if (sourceIndex === targetIndex) return;
+      
+      const isFree = (c) => !c.text && !c.image && (c.bgColor === '#ffffff' || !c.bgColor);
+      const cells = state.cells;
+      const sourceCell = cells[sourceIndex];
+      
+      if (isFree(cells[targetIndex])) {
+        cells[targetIndex] = sourceCell;
+        cells[sourceIndex] = { id: Date.now().toString() + Math.random().toString(), text: '', image: '', bgColor: '#ffffff', textColor: '#000000' };
+      } else {
+        cells[sourceIndex] = { id: Date.now().toString() + Math.random().toString(), text: '', image: '', bgColor: '#ffffff', textColor: '#000000' };
+        
+        let freeIndex = -1;
+        for (let i = targetIndex; i < cells.length; i++) {
+          if (isFree(cells[i])) {
+            freeIndex = i;
+            break;
+          }
+        }
+        
+        if (freeIndex !== -1) {
+          for (let i = freeIndex; i > targetIndex; i--) {
+            cells[i] = cells[i-1];
+          }
+        } else {
+          for (let i = cells.length - 1; i > targetIndex; i--) {
+            cells[i] = cells[i-1];
+          }
+        }
+        cells[targetIndex] = sourceCell;
+      }
+      renderGrid();
+    }
+
     function renderGrid() {
       const g = document.getElementById('grid');
       g.style.gridTemplateColumns = `repeat(${state.cols}, minmax(0,1fr))`;
@@ -517,6 +552,39 @@
       
       state.cells.forEach((c, index) => {
         const el = document.createElement('button');
+        
+        if (state.mode === 'edit') {
+           el.draggable = true;
+           el.addEventListener('dragstart', e => {
+              e.dataTransfer.setData('text/plain', index);
+              e.dataTransfer.effectAllowed = 'move';
+              el.style.opacity = '0.5';
+           });
+           el.addEventListener('dragend', e => {
+              el.style.opacity = '1';
+              document.querySelectorAll('#grid button').forEach(b => b.style.outline = '');
+           });
+           el.addEventListener('dragover', e => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'move';
+           });
+           el.addEventListener('dragenter', e => {
+              e.preventDefault();
+              const cCell = state.cells[index];
+              const empty = !cCell.text && !cCell.image && (cCell.bgColor === '#ffffff' || !cCell.bgColor);
+              el.style.outline = empty ? '3px dashed #10b981' : '3px dashed #3b82f6';
+              el.style.outlineOffset = '-3px';
+           });
+           el.addEventListener('dragleave', e => {
+              el.style.outline = '';
+           });
+           el.addEventListener('drop', e => {
+              e.preventDefault();
+              el.style.outline = '';
+              const srcIdx = parseInt(e.dataTransfer.getData('text/plain'), 10);
+              if(!isNaN(srcIdx) && srcIdx !== index) handleDrop(srcIdx, index);
+           });
+        }
         
         let isHeader = false;
         if(state.boardType === 'routine-h' && index < state.cols) isHeader = true;
@@ -534,7 +602,31 @@
           }
 
           el.onclick = () => {
-             if(state.mode === 'edit') openCellModal(c.id, true);
+             if(state.mode === 'edit') {
+               openCellModal(c.id, true);
+             } else {
+               if(c.text && window.speechSynthesis) {
+                 window.speechSynthesis.cancel();
+                 const u = new SpeechSynthesisUtterance(c.text);
+                 const voices = window.speechSynthesis.getVoices();
+                 if (state.tts && state.tts.voiceURI) {
+                   const voice = voices.find(v => v.voiceURI === state.tts.voiceURI);
+                   if(voice) u.voice = voice;
+                 }
+                 u.rate = (state.tts && state.tts.rate) ? state.tts.rate : 1;
+                 u.pitch = (state.tts && state.tts.pitch) ? state.tts.pitch : 1;
+                 
+                 u.onstart = () => el.classList.add('speaking');
+                 const clearSpk = () => el.classList.remove('speaking');
+                 u.onend = clearSpk;
+                 u.onerror = clearSpk;
+  
+                 window.speechSynthesis.speak(u);
+               }
+               el.style.transform = 'scale(0.95)';
+               el.style.opacity = '0.7';
+               setTimeout(() => { if(!el.classList.contains('speaking')) el.style.transform = ''; el.style.opacity = '1'; }, 200);
+             }
           };
 
           const fontSizeClass = (state.cols * state.rows >= 30) ? 'text-xs' : (state.cols * state.rows >= 16) ? 'text-sm' : 'text-sm md:text-base';
