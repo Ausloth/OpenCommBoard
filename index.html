@@ -40,8 +40,6 @@
     }
 
     /* Modal Tabs */
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
     .tab-btn.active { border-bottom: 2px solid #2563eb; color: #2563eb; }
   </style>
 </head>
@@ -162,18 +160,23 @@
               <div>
                 <label class="block text-sm font-semibold mb-1">Background Color</label>
                 <div class="flex flex-wrap items-center gap-2">
-                  <input type="color" id="cell-color" value="#ffffff" class="w-10 h-10 border p-0 rounded cursor-pointer shrink-0" />
                   <button class="preset-color w-8 h-8 rounded border bg-white border-gray-300" data-color="#ffffff"></button>
                   <button class="preset-color w-8 h-8 rounded border bg-blue-100 border-blue-300" data-color="#dbeafe"></button>
                   <button class="preset-color w-8 h-8 rounded border bg-green-100 border-green-300" data-color="#dcfce3"></button>
                   <button class="preset-color w-8 h-8 rounded border bg-yellow-100 border-yellow-300" data-color="#fef08a"></button>
                   <button class="preset-color w-8 h-8 rounded border bg-red-100 border-red-300" data-color="#fee2e2"></button>
+                  <div class="border-l h-6 mx-1 border-gray-300"></div>
+                  <input type="color" id="cell-color" value="#ffffff" class="w-8 h-8 border p-0 rounded cursor-pointer shrink-0" title="Custom color" />
+                  <span class="text-xs text-gray-500 font-medium">Custom</span>
                 </div>
               </div>
               
               <div>
                 <label class="block text-sm font-semibold mb-1">Text Color</label>
-                <input type="color" id="cell-text-color" value="#000000" class="w-10 h-10 border p-0 rounded cursor-pointer" />
+                <div class="flex items-center gap-2">
+                  <input type="color" id="cell-text-color" value="#000000" class="w-8 h-8 border p-0 rounded cursor-pointer" title="Custom text color" />
+                  <span class="text-xs text-gray-500 font-medium">Custom</span>
+                </div>
               </div>
             </div>
 
@@ -182,14 +185,14 @@
             <!-- Right Side: Icon Search & Tabs -->
             <div class="flex-[2] flex flex-col min-w-0">
               <div class="flex border-b mb-4 overflow-x-auto shrink-0">
-                <button class="tab-btn active px-4 py-2 font-semibold text-sm whitespace-nowrap outline-none" data-target="tab-emoji">😊 Emoji</button>
-                <button class="tab-btn px-4 py-2 font-semibold text-sm text-gray-500 whitespace-nowrap outline-none" data-target="tab-symbotalk">🗣️ SymboTalk</button>
+                <button class="tab-btn active px-4 py-2 font-semibold text-sm whitespace-nowrap outline-none" data-target="tab-arasaac">🗣️ ARASAAC</button>
+                <button class="tab-btn px-4 py-2 font-semibold text-sm text-gray-500 whitespace-nowrap outline-none" data-target="tab-emoji">😊 Emoji</button>
                 <button class="tab-btn px-4 py-2 font-semibold text-sm text-gray-500 whitespace-nowrap outline-none" data-target="tab-custom">📁 Custom</button>
                 <button class="tab-btn px-4 py-2 font-semibold text-sm text-gray-500 whitespace-nowrap outline-none" data-target="tab-opensymbols">🔑 OpenSymbols</button>
               </div>
               
               <!-- Tab 1: Emoji (RELIABLE DEFAULT) -->
-              <div id="tab-emoji" class="tab-content active flex flex-col h-full">
+              <div id="tab-emoji" class="tab-content hidden flex-col h-full">
                 <div class="flex gap-2 mb-2 shrink-0">
                   <input type="text" id="emoji-search-input" placeholder="Search emojis (e.g. smile, car)" class="flex-1 px-3 py-2 border rounded text-sm"/>
                   <button id="btn-search-emoji" class="px-4 bg-blue-100 text-blue-800 rounded font-bold hover:bg-blue-200">Search</button>
@@ -199,19 +202,19 @@
                 </div>
               </div>
 
-              <!-- Tab 2: SymboTalk (NEW AAC FOCUSED) -->
-              <div id="tab-symbotalk" class="tab-content flex flex-col h-full">
+              <!-- Tab 2: ARASAAC (NEW AAC FOCUSED) -->
+              <div id="tab-arasaac" class="tab-content flex flex-col h-full">
                 <div class="flex gap-2 mb-2 shrink-0">
-                  <input type="text" id="symbo-search-input" placeholder="Search AAC symbols (e.g. eat, drink)" class="flex-1 px-3 py-2 border rounded text-sm"/>
-                  <button id="btn-search-symbo" class="px-4 bg-blue-100 text-blue-800 rounded font-bold hover:bg-blue-200">Search</button>
+                  <input type="text" id="arasaac-search-input" placeholder="Search AAC symbols (e.g. eat, drink)" class="flex-1 px-3 py-2 border rounded text-sm"/>
+                  <button id="btn-search-arasaac" class="px-4 bg-blue-100 text-blue-800 rounded font-bold hover:bg-blue-200">Search</button>
                 </div>
-                <div id="symbo-results" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 bg-gray-50 p-2 rounded border flex-1 content-start overflow-y-auto min-h-[200px]">
-                   <p class="col-span-full text-sm text-gray-500 text-center mt-8">Powered by public SymboTalk API.</p>
+                <div id="arasaac-results" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 bg-gray-50 p-2 rounded border flex-1 content-start overflow-y-auto min-h-[200px]">
+                   <p class="col-span-full text-sm text-gray-500 text-center mt-8">Powered by ARASAAC API.</p>
                 </div>
               </div>
 
               <!-- Tab 3: Custom (Upload & Paste) -->
-              <div id="tab-custom" class="tab-content flex flex-col space-y-4">
+              <div id="tab-custom" class="tab-content hidden flex-col space-y-4">
                 <div class="p-4 border rounded bg-gray-50">
                    <label class="block font-semibold mb-2 text-sm">Upload Image file:</label>
                    <input type="file" id="input-upload-image" accept="image/*" class="w-full text-sm border bg-white rounded p-1"/>
@@ -231,7 +234,7 @@
               </div>
 
               <!-- Tab 4: OpenSymbols (SECURE OPTIONAL) -->
-              <div id="tab-opensymbols" class="tab-content flex flex-col h-full">
+              <div id="tab-opensymbols" class="tab-content hidden flex-col h-full">
                 <div class="bg-blue-50 border border-blue-200 p-3 rounded mb-3 shrink-0 text-sm">
                   <p><strong>OpenSymbols API Token Optional</strong></p>
                   <p class="text-gray-600 mb-2 mt-1">Get an API token from your opensymbols.org profile to avoid rate limits.</p>
@@ -294,9 +297,11 @@
       document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.classList.add('text-gray-500'); });
-          document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach(c => { c.classList.remove('flex'); c.classList.add('hidden'); });
           e.target.classList.add('active'); e.target.classList.remove('text-gray-500');
-          byId(e.target.dataset.target).classList.add('active');
+          const target = byId(e.target.dataset.target);
+          target.classList.remove('hidden');
+          target.classList.add('flex');
         });
       });
 
@@ -304,9 +309,9 @@
       byId('btn-search-emoji').addEventListener('click', searchEmojiHub);
       byId('emoji-search-input').addEventListener('keydown', e => { if(e.key === 'Enter') searchEmojiHub(); });
       
-      // Tab 2: SymboTalk
-      byId('btn-search-symbo').addEventListener('click', searchSymboTalk);
-      byId('symbo-search-input').addEventListener('keydown', e => { if(e.key === 'Enter') searchSymboTalk(); });
+      // Tab 2: ARASAAC AAC Symbols
+      byId('btn-search-arasaac').addEventListener('click', searchArasaac);
+      byId('arasaac-search-input').addEventListener('keydown', e => { if(e.key === 'Enter') searchArasaac(); });
 
       // Tab 3: Custom
       byId('input-upload-image').addEventListener('change', handleUpload);
@@ -627,15 +632,15 @@
       }
     }
 
-    /* NEW: SymboTalk Public API */
-    async function searchSymboTalk() {
-      const q = document.getElementById('symbo-search-input').value;
-      const res = document.getElementById('symbo-results');
+    /* NEW: ARASAAC Public API (Replaced SymboTalk) */
+    async function searchArasaac() {
+      const q = document.getElementById('arasaac-search-input').value;
+      const res = document.getElementById('arasaac-results');
       if(!q) return;
-      res.innerHTML = '<p class="col-span-full text-center">Searching SymboTalk...</p>';
+      res.innerHTML = '<p class="col-span-full text-center">Searching ARASAAC...</p>';
       
       try {
-        const url = 'https://symbotalkapiv1.azurewebsites.net/search/?name=' + encodeURIComponent(q) + '&lang=en&repo=all';
+        const url = 'https://api.arasaac.org/api/pictograms/en/search/' + encodeURIComponent(q);
         const r = await fetch(url);
         if(!r.ok) throw new Error("API error");
         const data = await r.json();
@@ -646,10 +651,8 @@
         }
 
         data.slice(0, 30).forEach(s => {
-          // data items usually have { image: "http...", label: "...", repo: "arasaac" }
-          // Let's assume standard object return or URL
-          let imgUrl = typeof s === 'string' ? s : (s.image || s.image_url || s.url);
-          if(!imgUrl) return;
+          if(!s._id) return;
+          let imgUrl = 'https://static.arasaac.org/pictograms/' + s._id + '/' + s._id + '_300.png';
 
           const b = document.createElement('button');
           b.className = 'border shadow-sm p-1 hover:bg-blue-100 ring-2 ring-transparent focus:ring-blue-500 rounded bg-white h-24 flex flex-col items-center justify-center overflow-hidden';
@@ -660,7 +663,7 @@
 
       } catch(e) {
         console.error(e);
-        res.innerHTML = '<p class="text-red-500 col-span-full text-xs text-center">SymboTalk search failed. The API might be temporarily down.</p>';
+        res.innerHTML = '<p class="text-red-500 col-span-full text-xs text-center">ARASAAC search failed. The API might be temporarily down.</p>';
       }
     }
 
@@ -728,15 +731,15 @@
       syncCells();
       
       const demo = [
-        {t:"I want",c:"#dbeafe"},{t:"Coffee",c:"#fef08a", e:"☕"},{t:"Tea",c:"#fef08a", e:"🍵"},{t:"Juice",c:"#fef08a", e:"🧃"},{t:"Water",c:"#e0f2fe", e:"💧"},
-        {t:"Please",c:"#dcfce3"},{t:"Hot",c:"#ffedd5", e:"🔥"},{t:"Cold",c:"#e0f2fe", e:"❄️"},{t:"Milk",c:"#f3f4f6", e:"🥛"},{t:"Sugar",c:"#f3f4f6"},
-        {t:"Yes",c:"#dcfce3", e:"✅"},{t:"No",c:"#fee2e2", e:"❌"},{t:"Stop",c:"#fee2e2", e:"🛑"},{t:"Thank You",c:"#dcfce3"},{t:"More",c:"#dbeafe", e:"➕"}
+        {t:"I want",c:"#dbeafe"},{t:"Coffee",c:"#fef08a", i:"https://static.arasaac.org/pictograms/10048/10048_300.png"},{t:"Tea",c:"#fef08a", i:"https://static.arasaac.org/pictograms/9566/9566_300.png"},{t:"Juice",c:"#fef08a", i:"https://static.arasaac.org/pictograms/2418/2418_300.png"},{t:"Water",c:"#e0f2fe", i:"https://static.arasaac.org/pictograms/4726/4726_300.png"},
+        {t:"Please",c:"#dcfce3", i:"https://static.arasaac.org/pictograms/26359/26359_300.png"},{t:"Hot",c:"#ffedd5", i:"https://static.arasaac.org/pictograms/2219/2219_300.png"},{t:"Cold",c:"#e0f2fe", i:"https://static.arasaac.org/pictograms/2576/2576_300.png"},{t:"Milk",c:"#f3f4f6", i:"https://static.arasaac.org/pictograms/2387/2387_300.png"},{t:"Sugar",c:"#f3f4f6", i:"https://static.arasaac.org/pictograms/4616/4616_300.png"},
+        {t:"Yes",c:"#dcfce3", i:"https://static.arasaac.org/pictograms/2819/2819_300.png"},{t:"No",c:"#fee2e2", i:"https://static.arasaac.org/pictograms/2820/2820_300.png"},{t:"Stop",c:"#fee2e2", i:"https://static.arasaac.org/pictograms/2731/2731_300.png"},{t:"Thank You",c:"#dcfce3", i:"https://static.arasaac.org/pictograms/26360/26360_300.png"},{t:"More",c:"#dbeafe", i:"https://static.arasaac.org/pictograms/2290/2290_300.png"}
       ];
       state.cells.forEach((c,i) => { 
         if(demo[i]) { 
           c.text=demo[i].t; 
           c.bgColor=demo[i].c; 
-          c.image=demo[i].e ? generateEmojiCanvasHex(demo[i].e) : ''; 
+          c.image=demo[i].i || ''; 
         } 
       });
       state.title = "Cafe Order Board"; 
