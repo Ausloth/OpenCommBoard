@@ -1,0 +1,6 @@
+{
+  "name": "AAC Icon Board Builder",
+  "description": "Accessible, self-contained HTML/JS app for creating Augmentative and Alternative Communication (AAC) boards with printable grids and text-to-speech functionality.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
