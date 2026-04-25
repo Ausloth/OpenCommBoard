@@ -274,6 +274,24 @@
       byId('slider-rows').addEventListener('input', e => { state.rows = parseInt(e.target.value); byId('val-rows').textContent = state.rows; syncCells(); });
       byId('input-title').addEventListener('input', e => { state.title = e.target.value; byId('board-display-title').textContent = state.title; });
 
+      // Auto-search link to cell-text
+      let debounceTimer = null;
+      byId('cell-text').addEventListener('input', e => {
+        const v = e.target.value;
+        byId('arasaac-search-input').value = v;
+        byId('emoji-search-input').value = v;
+        byId('os-search-input').value = v;
+        
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          if (v) {
+            if (!byId('tab-arasaac').classList.contains('hidden')) searchArasaac();
+            else if (!byId('tab-emoji').classList.contains('hidden')) searchEmojiHub();
+            else if (!byId('tab-opensymbols').classList.contains('hidden')) searchOpenSymbols();
+          }
+        }, 500);
+      });
+
       // Mode & Templates
       byId('btn-mode-edit').addEventListener('click', () => setMode('edit'));
       byId('btn-mode-use').addEventListener('click', () => setMode('use'));
@@ -441,6 +459,23 @@
       document.getElementById('cell-color').value = c.bgColor || '#ffffff';
       document.getElementById('cell-text-color').value = c.textColor || '#000000';
       
+      const searchTerm = c.text || '';
+      document.getElementById('arasaac-search-input').value = searchTerm;
+      document.getElementById('emoji-search-input').value = searchTerm;
+      document.getElementById('os-search-input').value = searchTerm;
+      
+      if (searchTerm) {
+        setTimeout(() => {
+          if (!document.getElementById('tab-arasaac').classList.contains('hidden')) searchArasaac();
+          else if (!document.getElementById('tab-emoji').classList.contains('hidden')) searchEmojiHub();
+          else if (!document.getElementById('tab-opensymbols').classList.contains('hidden')) searchOpenSymbols();
+        }, 50);
+      } else {
+        document.getElementById('arasaac-results').innerHTML = '<p class="col-span-full text-sm text-gray-500 text-center mt-8">Powered by ARASAAC API.</p>';
+        document.getElementById('emoji-results').innerHTML = '<p class="col-span-full text-sm text-gray-500 text-center mt-8">Search to find descriptive emojis.</p>';
+        document.getElementById('os-results').innerHTML = '';
+      }
+
       // hide status
       document.getElementById('modal-status').classList.add('hidden');
       document.getElementById('custom-preview-area').classList.add('hidden');
@@ -731,9 +766,9 @@
       syncCells();
       
       const demo = [
-        {t:"I want",c:"#dbeafe"},{t:"Coffee",c:"#fef08a", i:"https://static.arasaac.org/pictograms/10048/10048_300.png"},{t:"Tea",c:"#fef08a", i:"https://static.arasaac.org/pictograms/9566/9566_300.png"},{t:"Juice",c:"#fef08a", i:"https://static.arasaac.org/pictograms/2418/2418_300.png"},{t:"Water",c:"#e0f2fe", i:"https://static.arasaac.org/pictograms/4726/4726_300.png"},
+        {t:"I want",c:"#dbeafe", i:"https://static.arasaac.org/pictograms/5441/5441_300.png"},{t:"Coffee",c:"#fef08a", i:"https://static.arasaac.org/pictograms/10048/10048_300.png"},{t:"Tea",c:"#fef08a", i:"https://static.arasaac.org/pictograms/9566/9566_300.png"},{t:"Juice",c:"#fef08a", i:"https://static.arasaac.org/pictograms/2418/2418_300.png"},{t:"Water",c:"#e0f2fe", i:"https://static.arasaac.org/pictograms/4726/4726_300.png"},
         {t:"Please",c:"#dcfce3", i:"https://static.arasaac.org/pictograms/26359/26359_300.png"},{t:"Hot",c:"#ffedd5", i:"https://static.arasaac.org/pictograms/2219/2219_300.png"},{t:"Cold",c:"#e0f2fe", i:"https://static.arasaac.org/pictograms/2576/2576_300.png"},{t:"Milk",c:"#f3f4f6", i:"https://static.arasaac.org/pictograms/2387/2387_300.png"},{t:"Sugar",c:"#f3f4f6", i:"https://static.arasaac.org/pictograms/4616/4616_300.png"},
-        {t:"Yes",c:"#dcfce3", i:"https://static.arasaac.org/pictograms/2819/2819_300.png"},{t:"No",c:"#fee2e2", i:"https://static.arasaac.org/pictograms/2820/2820_300.png"},{t:"Stop",c:"#fee2e2", i:"https://static.arasaac.org/pictograms/2731/2731_300.png"},{t:"Thank You",c:"#dcfce3", i:"https://static.arasaac.org/pictograms/26360/26360_300.png"},{t:"More",c:"#dbeafe", i:"https://static.arasaac.org/pictograms/2290/2290_300.png"}
+        {t:"Yes",c:"#dcfce3", i:"https://static.arasaac.org/pictograms/5584/5584_300.png"},{t:"No",c:"#fee2e2", i:"https://static.arasaac.org/pictograms/5526/5526_300.png"},{t:"Stop",c:"#fee2e2", i:"https://static.arasaac.org/pictograms/7196/7196_300.png"},{t:"Thank You",c:"#dcfce3", i:"https://static.arasaac.org/pictograms/26360/26360_300.png"},{t:"More",c:"#dbeafe", i:"https://static.arasaac.org/pictograms/2290/2290_300.png"}
       ];
       state.cells.forEach((c,i) => { 
         if(demo[i]) { 
