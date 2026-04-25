@@ -125,7 +125,9 @@
           <div class="space-y-3 mb-6" id="panel-templates">
             <h2 class="font-bold text-xs uppercase">Templates</h2>
             <div class="grid grid-cols-2 gap-2">
-              <button id="btn-template-cafe" class="px-2 py-2 border text-blue-700 bg-blue-50 rounded text-sm hover:bg-blue-100">☕ Cafe Board</button>
+              <button id="btn-template-cafe" class="px-2 py-2 border text-blue-700 bg-blue-50 rounded text-sm hover:bg-blue-100">☕ Cafe</button>
+              <button id="btn-template-routine" class="px-2 py-2 border text-green-700 bg-green-50 rounded text-sm hover:bg-green-100">🗓️ Daily (V)</button>
+              <button id="btn-template-routine-h" class="px-2 py-2 border text-purple-700 bg-purple-50 rounded text-sm hover:bg-purple-100">🗓️ Weekly (H)</button>
               <button id="btn-template-clear" class="px-2 py-2 border text-red-600 bg-red-50 rounded text-sm hover:bg-red-100">🧹 Clear Grid</button>
             </div>
           </div>
@@ -306,6 +308,8 @@
       byId('btn-mode-edit').addEventListener('click', () => setMode('edit'));
       byId('btn-mode-use').addEventListener('click', () => setMode('use'));
       byId('btn-template-cafe').addEventListener('click', loadCafeTemplate);
+      byId('btn-template-routine').addEventListener('click', loadRoutineTemplate);
+      byId('btn-template-routine-h').addEventListener('click', loadRoutineHTemplate);
       byId('btn-template-clear').addEventListener('click', () => { if(confirm("Clear board?")) clearBoard(); });
 
       // Modal base
@@ -817,7 +821,9 @@
     function clearBoard() { state.cells.forEach(c => { c.text=''; c.image=''; c.bgColor='#ffffff'; }); renderGrid(); }
     
     function loadCafeTemplate() {
+      state.boardType = 'comm';
       state.rows = 4; state.cols = 5; 
+      document.getElementById('select-board-type').value = state.boardType;
       document.getElementById('slider-rows').value = 4; document.getElementById('val-rows').textContent = 4;
       document.getElementById('slider-cols').value = 5; document.getElementById('val-cols').textContent = 5;
       syncCells();
@@ -835,6 +841,83 @@
         } 
       });
       state.title = "Cafe Order Board"; 
+      document.getElementById('input-title').value = state.title;
+      document.getElementById('board-display-title').textContent = state.title;
+      renderGrid();
+    }
+
+    function loadRoutineTemplate() {
+      state.boardType = 'routine-v';
+      state.rows = 9; state.cols = 2; 
+      document.getElementById('select-board-type').value = state.boardType;
+      document.getElementById('slider-rows').value = 9; document.getElementById('val-rows').textContent = 9;
+      document.getElementById('slider-cols').value = 2; document.getElementById('val-cols').textContent = 2;
+      syncCells();
+      
+      const demo = [
+        {t:"Morning",c:"#fef08a", i:"https://static.arasaac.org/pictograms/25704/25704_300.png"}, {t:"Breakfast",c:"#ffffff", i:"https://static.arasaac.org/pictograms/4626/4626_300.png"},
+        {t:"Morning",c:"#fef08a", i:"https://static.arasaac.org/pictograms/25704/25704_300.png"}, {t:"Getting Dressed",c:"#ffffff", i:"https://static.arasaac.org/pictograms/6627/6627_300.png"},
+        {t:"Morning",c:"#fef08a", i:"https://static.arasaac.org/pictograms/25704/25704_300.png"}, {t:"Brushing Teeth",c:"#ffffff", i:"https://static.arasaac.org/pictograms/31880/31880_300.png"},
+        {t:"Morning",c:"#fef08a", i:"https://static.arasaac.org/pictograms/25704/25704_300.png"}, {t:"Going to Work",c:"#ffffff", i:"https://static.arasaac.org/pictograms/6624/6624_300.png"},
+        {t:"Afternoon",c:"#fed7aa", i:"https://static.arasaac.org/pictograms/7268/7268_300.png"}, {t:"Lunchtime",c:"#ffffff", i:"https://static.arasaac.org/pictograms/4609/4609_300.png"},
+        {t:"Afternoon",c:"#fed7aa", i:"https://static.arasaac.org/pictograms/7268/7268_300.png"}, {t:"Work",c:"#ffffff", i:"https://static.arasaac.org/pictograms/6624/6624_300.png"},
+        {t:"Evening",c:"#e0f2fe", i:"https://static.arasaac.org/pictograms/38567/38567_300.png"}, {t:"Home Time",c:"#ffffff", i:"https://static.arasaac.org/pictograms/6964/6964_300.png"},
+        {t:"Evening",c:"#e0f2fe", i:"https://static.arasaac.org/pictograms/38567/38567_300.png"}, {t:"Dinner",c:"#ffffff", i:"https://static.arasaac.org/pictograms/4592/4592_300.png"},
+        {t:"Night",c:"#c7d2fe", i:"https://static.arasaac.org/pictograms/26997/26997_300.png"}, {t:"Bedtime",c:"#ffffff", i:"https://static.arasaac.org/pictograms/6479/6479_300.png"},
+      ];
+      
+      state.cells.forEach((c,i) => { 
+        if(demo[i]) { 
+          c.text=demo[i].t; 
+          c.bgColor=demo[i].c; 
+          c.image=demo[i].i || ''; 
+        } 
+      });
+      state.title = "Daily Routine"; 
+      document.getElementById('input-title').value = state.title;
+      document.getElementById('board-display-title').textContent = state.title;
+      renderGrid();
+    }
+
+    function loadRoutineHTemplate() {
+      state.boardType = 'routine-h';
+      state.rows = 3; state.cols = 5; 
+      document.getElementById('select-board-type').value = state.boardType;
+      document.getElementById('slider-rows').value = 3; document.getElementById('val-rows').textContent = 3;
+      document.getElementById('slider-cols').value = 5; document.getElementById('val-cols').textContent = 5;
+      syncCells();
+      
+      const demo = [
+        // Horizontal headers row 0
+        {t:"Monday",c:"#fef08a", i:"https://static.arasaac.org/pictograms/37730/37730_300.png"},
+        {t:"Tuesday",c:"#fef08a", i:"https://static.arasaac.org/pictograms/37729/37729_300.png"},
+        {t:"Wednesday",c:"#fef08a", i:"https://static.arasaac.org/pictograms/37728/37728_300.png"},
+        {t:"Thursday",c:"#fef08a", i:"https://static.arasaac.org/pictograms/37727/37727_300.png"},
+        {t:"Friday",c:"#fef08a", i:"https://static.arasaac.org/pictograms/37726/37726_300.png"},
+        
+        // Row 1
+        {t:"School",c:"#ffffff", i:"https://static.arasaac.org/pictograms/32446/32446_300.png"},
+        {t:"School",c:"#ffffff", i:"https://static.arasaac.org/pictograms/32446/32446_300.png"},
+        {t:"School",c:"#ffffff", i:"https://static.arasaac.org/pictograms/32446/32446_300.png"},
+        {t:"School",c:"#ffffff", i:"https://static.arasaac.org/pictograms/32446/32446_300.png"},
+        {t:"School",c:"#ffffff", i:"https://static.arasaac.org/pictograms/32446/32446_300.png"},
+
+        // Row 2
+        {t:"Therapy",c:"#e0f2fe", i:"https://static.arasaac.org/pictograms/24680/24680_300.png"},
+        {t:"Sport",c:"#dcfce3", i:"https://static.arasaac.org/pictograms/7010/7010_300.png"},
+        {t:"Therapy",c:"#e0f2fe", i:"https://static.arasaac.org/pictograms/24680/24680_300.png"},
+        {t:"Park",c:"#dcfce3", i:"https://static.arasaac.org/pictograms/5379/5379_300.png"},
+        {t:"Party",c:"#fed7aa", i:"https://static.arasaac.org/pictograms/7099/7099_300.png"}
+      ];
+      
+      state.cells.forEach((c,i) => { 
+        if(demo[i]) { 
+          c.text=demo[i].t; 
+          c.bgColor=demo[i].c; 
+          c.image=demo[i].i || ''; 
+        } 
+      });
+      state.title = "Weekly Schedule"; 
       document.getElementById('input-title').value = state.title;
       document.getElementById('board-display-title').textContent = state.title;
       renderGrid();
