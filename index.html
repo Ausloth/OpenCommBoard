@@ -615,15 +615,14 @@
       document.getElementById('cell-text-color').value = c.textColor || '#000000';
 
       const rightPane = document.getElementById('modal-right-pane');
-      const innerModal = m.querySelector('.bg-white.m-auto');
       if(isHeader) {
          rightPane.classList.add('hidden');
-         innerModal.classList.remove('max-w-4xl');
-         innerModal.classList.add('max-w-md'); // smaller modal
+         m.classList.remove('max-w-4xl');
+         m.classList.add('max-w-md'); // smaller modal
       } else {
          rightPane.classList.remove('hidden');
-         innerModal.classList.add('max-w-4xl');
-         innerModal.classList.remove('max-w-md');
+         m.classList.add('max-w-4xl');
+         m.classList.remove('max-w-md');
       }
       
       const searchTerm = c.text || '';
