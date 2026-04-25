@@ -59,6 +59,7 @@
     let state = {
       title: "My Communication Board",
       rows: 4, cols: 4,
+      boardType: "comm",
       mode: "edit", activeCellId: null,
       cells: []
     };
@@ -97,6 +98,14 @@
             <div>
               <label class="block text-sm font-medium mb-1">Board Title</label>
               <input type="text" id="input-title" value="${state.title}" class="w-full px-3 py-2 border rounded focus:ring-2 outline-none" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Board Type</label>
+              <select id="select-board-type" class="w-full px-3 py-2 border rounded focus:ring-2 outline-none">
+                <option value="comm">Communication Board</option>
+                <option value="routine-h">Routine (Top Headers)</option>
+                <option value="routine-v">Routine (Side Headers)</option>
+              </select>
             </div>
             <div class="flex gap-4">
               <div class="flex-1">
@@ -183,7 +192,7 @@
             <div class="hidden lg:block border-l border-gray-200"></div>
             
             <!-- Right Side: Icon Search & Tabs -->
-            <div class="flex-[2] flex flex-col min-w-0">
+            <div id="modal-right-pane" class="flex-[2] flex flex-col min-w-0">
               <div class="flex border-b mb-4 overflow-x-auto shrink-0">
                 <button class="tab-btn active px-4 py-2 font-semibold text-sm whitespace-nowrap outline-none" data-target="tab-arasaac">🗣️ ARASAAC</button>
                 <button class="tab-btn px-4 py-2 font-semibold text-sm text-gray-500 whitespace-nowrap outline-none" data-target="tab-emoji">😊 Emoji</button>
@@ -273,6 +282,7 @@
       byId('slider-cols').addEventListener('input', e => { state.cols = parseInt(e.target.value); byId('val-cols').textContent = state.cols; syncCells(); });
       byId('slider-rows').addEventListener('input', e => { state.rows = parseInt(e.target.value); byId('val-rows').textContent = state.rows; syncCells(); });
       byId('input-title').addEventListener('input', e => { state.title = e.target.value; byId('board-display-title').textContent = state.title; });
+      byId('select-board-type').addEventListener('change', e => { state.boardType = e.target.value; renderBoard(); });
 
       // Auto-search link to cell-text
       let debounceTimer = null;
@@ -362,6 +372,8 @@
 
     function finishImport() {
       // Sync UI state with imported state
+      if(!state.boardType) state.boardType = 'comm';
+      document.getElementById('select-board-type').value = state.boardType;
       document.getElementById('input-title').value = state.title;
       document.getElementById('board-display-title').textContent = state.title;
       document.getElementById('slider-cols').value = state.cols;
@@ -405,24 +417,57 @@
       g.style.gridTemplateRows = `repeat(${state.rows}, minmax(0,1fr))`;
       g.innerHTML = '';
       
-      state.cells.forEach(c => {
+      state.cells.forEach((c, index) => {
         const el = document.createElement('button');
+        
+        let isHeader = false;
+        if(state.boardType === 'routine-h' && index < state.cols) isHeader = true;
+        if(state.boardType === 'routine-v' && index % state.cols === 0) isHeader = true;
+
+        if (isHeader) {
+          el.className = "flex items-center justify-center p-2 border-2 border-transparent transition-transform overflow-hidden relative break-inside-avoid print:p-1 w-full h-full text-center bg-gray-200 rounded-xl";
+          el.style.backgroundColor = c.bgColor === '#ffffff' ? '#e5e7eb' : c.bgColor;
+          el.style.color = c.textColor;
+
+          if(state.mode === 'edit') {
+            el.classList.add('hover:ring-4', 'ring-blue-300', 'cursor-pointer');
+          } else {
+             el.classList.add('print:shadow-none');
+          }
+
+          el.onclick = () => {
+             if(state.mode === 'edit') openCellModal(c.id, true);
+          };
+
+          const fontSizeClass = (state.cols * state.rows >= 30) ? 'text-xs' : (state.cols * state.rows >= 16) ? 'text-sm' : 'text-sm md:text-base';
+          const txt = c.text || "";
+          el.innerHTML = `<span class="font-bold uppercase tracking-tight ${fontSizeClass} m-auto">${txt || (state.mode === 'edit' ? '+' : '')}</span>`;
+          
+          g.appendChild(el);
+          return;
+        }
+
         el.className = "flex flex-col items-center justify-center p-2 border-2 transition-transform overflow-hidden relative break-inside-avoid print:p-1 w-full h-full text-center";
         el.style.backgroundColor = c.bgColor;
         el.style.borderColor = "#cbd5e1"; // Generic gray fallback border
         el.style.color = c.textColor;
         
+        const isEmpty = !c.text && !c.image;
+        if(isEmpty) {
+            el.classList.add('print:hidden');
+        }
+
         if(state.mode === 'edit') {
           el.classList.add('hover:ring-4', 'ring-blue-300', 'cursor-pointer', 'rounded-lg');
           // subtle indication for empty cells in edit mode
-          if(!c.text && !c.image) el.classList.add('border-dashed', 'bg-opacity-50');
+          if(isEmpty) el.classList.add('border-dashed', 'bg-opacity-50');
         } else {
           el.classList.add('hover:scale-[1.02]', 'cursor-pointer', 'rounded-xl', 'shadow-sm', 'print:shadow-none', 'print:border-solid');
         }
         
         el.onclick = () => {
           if(state.mode === 'edit') {
-            openCellModal(c.id);
+            openCellModal(c.id, false);
           } else {
             if(c.text && window.speechSynthesis) {
               window.speechSynthesis.cancel();
@@ -438,7 +483,7 @@
 
         if(c.image) {
           el.innerHTML += `<img src="${c.image}" class="flex-[3] w-full max-h-[70%] object-contain pointer-events-none mb-1 shadow-none" onerror="this.style.display='none'"/>`;
-        } else if (state.mode === 'edit') {
+        } else if (state.mode === 'edit' && isEmpty) {
            el.innerHTML += `<div class="flex-[3] flex items-center justify-center text-4xl text-gray-300 pointer-events-none mb-1">+</div>`;
         }
 
@@ -450,7 +495,7 @@
     }
 
     /* Modal ops */
-    function openCellModal(cellId) {
+    function openCellModal(cellId, isHeader = false) {
       state.activeCellId = cellId;
       const c = state.cells.find(x => x.id === cellId);
       const m = document.getElementById('edit-modal');
@@ -458,6 +503,18 @@
       document.getElementById('cell-text').value = c.text || '';
       document.getElementById('cell-color').value = c.bgColor || '#ffffff';
       document.getElementById('cell-text-color').value = c.textColor || '#000000';
+
+      const rightPane = document.getElementById('modal-right-pane');
+      const innerModal = m.querySelector('.bg-white.m-auto');
+      if(isHeader) {
+         rightPane.classList.add('hidden');
+         innerModal.classList.remove('max-w-4xl');
+         innerModal.classList.add('max-w-md'); // smaller modal
+      } else {
+         rightPane.classList.remove('hidden');
+         innerModal.classList.add('max-w-4xl');
+         innerModal.classList.remove('max-w-md');
+      }
       
       const searchTerm = c.text || '';
       document.getElementById('arasaac-search-input').value = searchTerm;
@@ -766,8 +823,8 @@
       syncCells();
       
       const demo = [
-        {t:"I want",c:"#dbeafe", i:"https://static.arasaac.org/pictograms/5441/5441_300.png"},{t:"Coffee",c:"#fef08a", i:"https://static.arasaac.org/pictograms/10048/10048_300.png"},{t:"Tea",c:"#fef08a", i:"https://static.arasaac.org/pictograms/9566/9566_300.png"},{t:"Juice",c:"#fef08a", i:"https://static.arasaac.org/pictograms/2418/2418_300.png"},{t:"Water",c:"#e0f2fe", i:"https://static.arasaac.org/pictograms/4726/4726_300.png"},
-        {t:"Please",c:"#dcfce3", i:"https://static.arasaac.org/pictograms/26359/26359_300.png"},{t:"Hot",c:"#ffedd5", i:"https://static.arasaac.org/pictograms/2219/2219_300.png"},{t:"Cold",c:"#e0f2fe", i:"https://static.arasaac.org/pictograms/2576/2576_300.png"},{t:"Milk",c:"#f3f4f6", i:"https://static.arasaac.org/pictograms/2387/2387_300.png"},{t:"Sugar",c:"#f3f4f6", i:"https://static.arasaac.org/pictograms/4616/4616_300.png"},
+        {t:"I want",c:"#dbeafe", i:"https://static.arasaac.org/pictograms/5441/5441_300.png"},{t:"Coffee",c:"#fef08a", i:"https://static.arasaac.org/pictograms/2296/2296_300.png"},{t:"Tea",c:"#fef08a", i:"https://static.arasaac.org/pictograms/29802/29802_300.png"},{t:"Juice",c:"#fef08a", i:"https://static.arasaac.org/pictograms/11461/11461_300.png"},{t:"Water",c:"#e0f2fe", i:"https://static.arasaac.org/pictograms/32464/32464_300.png"},
+        {t:"Please",c:"#dcfce3", i:"https://static.arasaac.org/pictograms/8195/8195_300.png"},{t:"Hot",c:"#ffedd5", i:"https://static.arasaac.org/pictograms/2300/2300_300.png"},{t:"Cold",c:"#e0f2fe", i:"https://static.arasaac.org/pictograms/4652/4652_300.png"},{t:"Milk",c:"#f3f4f6", i:"https://static.arasaac.org/pictograms/2445/2445_300.png"},{t:"Sugar",c:"#f3f4f6", i:"https://static.arasaac.org/pictograms/25560/25560_300.png"},
         {t:"Yes",c:"#dcfce3", i:"https://static.arasaac.org/pictograms/5584/5584_300.png"},{t:"No",c:"#fee2e2", i:"https://static.arasaac.org/pictograms/5526/5526_300.png"},{t:"Stop",c:"#fee2e2", i:"https://static.arasaac.org/pictograms/7196/7196_300.png"},{t:"Thank You",c:"#dcfce3", i:"https://static.arasaac.org/pictograms/26360/26360_300.png"},{t:"More",c:"#dbeafe", i:"https://static.arasaac.org/pictograms/2290/2290_300.png"}
       ];
       state.cells.forEach((c,i) => { 
