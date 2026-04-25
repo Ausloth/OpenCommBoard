@@ -39,6 +39,18 @@
       #app { display: block; }
     }
 
+    @keyframes speakPulse {
+      0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.6); }
+      70% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); transform: scale(1.02); border-color: #2563eb; }
+    }
+    .speaking {
+      animation: speakPulse 1s infinite;
+      border-color: #2563eb !important;
+      transform: scale(1.02);
+      z-index: 10;
+    }
+
     /* Modal Tabs */
     .tab-btn.active { border-bottom: 2px solid #2563eb; color: #2563eb; }
   </style>
@@ -61,7 +73,8 @@
       rows: 4, cols: 4,
       boardType: "comm",
       mode: "edit", activeCellId: null,
-      cells: []
+      cells: [],
+      tts: { voiceURI: null, rate: 1, pitch: 1, volume: 1 }
     };
 
     let emojiCache = null; // Cache for emoji search
@@ -88,7 +101,7 @@
             <p class="text-xs text-blue-600 font-medium">Free, self-contained, no-login.</p>
           </div>
           
-          <div class="flex items-center gap-2 bg-gray-100 p-1 rounded-lg mb-6 shadow-inner">
+          <div class="flex items-center gap-2 bg-gray-100 p-1 rounded-lg mb-6 shadow-inner" title="Use Mode turns your board into a speaking communication tool. Tap cells to hear them.">
             <button id="btn-mode-edit" class="flex-1 py-2 font-semibold text-sm rounded bg-white shadow text-blue-600 border border-blue-200">✏️ Edit Mode</button>
             <button id="btn-mode-use" class="flex-1 py-2 font-semibold text-sm rounded text-gray-600">🗣️ Use Mode</button>
           </div>
@@ -131,8 +144,30 @@
               <button id="btn-template-clear" class="px-2 py-2 border text-red-600 bg-red-50 rounded text-sm hover:bg-red-100">🧹 Clear Grid</button>
             </div>
           </div>
+
+          <!-- NEW: Use Mode toggle with Web Speech API TTS -->
+          <div class="space-y-3 mb-6 border-t pt-4" id="panel-speech">
+            <h2 class="font-bold text-xs uppercase flex items-center justify-between">
+              Speech & Audio
+              <span class="font-normal text-[10px] text-gray-500" title="Used in Use Mode to speak cell text">ℹ️ Help</span>
+            </h2>
+            <div>
+              <label class="block text-sm font-medium mb-1">Voice</label>
+              <select id="tts-voice" class="w-full px-2 py-1 text-sm border rounded focus:ring-2 outline-none"></select>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-sm font-medium mb-1">Rate: <span id="val-rate">1</span></label>
+                <input type="range" id="tts-rate" min="0.5" max="2" step="0.1" value="1" class="w-full" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Pitch: <span id="val-pitch">1</span></label>
+                <input type="range" id="tts-pitch" min="0" max="2" step="0.1" value="1" class="w-full" />
+              </div>
+            </div>
+          </div>
           
-          <div class="mt-auto space-y-2 pt-4 border-t">
+          <div class="mt-auto space-y-2 pt-4 border-t" id="panel-export">
             <button id="btn-print" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded shadow">🖨️ Print browser</button>
             <button id="btn-export-pdf" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded shadow">📄 Export PDF</button>
             <div class="grid grid-cols-2 gap-2">
@@ -273,8 +308,12 @@
       `;
 
       setupListeners();
+      initTTS();
       syncCells();
       loadCafeTemplate();
+      
+      const savedMode = localStorage.getItem('aac_use_mode');
+      if (savedMode === 'use') setMode('use');
     }
 
     function setupListeners() {
@@ -377,6 +416,7 @@
     function finishImport() {
       // Sync UI state with imported state
       if(!state.boardType) state.boardType = 'comm';
+      if(!state.tts) state.tts = { voiceURI: null, rate: 1, pitch: 1 };
       document.getElementById('select-board-type').value = state.boardType;
       document.getElementById('input-title').value = state.title;
       document.getElementById('board-display-title').textContent = state.title;
@@ -384,7 +424,40 @@
       document.getElementById('val-cols').textContent = state.cols;
       document.getElementById('slider-rows').value = state.rows;
       document.getElementById('val-rows').textContent = state.rows;
+      
+      document.getElementById('tts-voice').value = state.tts.voiceURI || '';
+      document.getElementById('tts-rate').value = state.tts.rate || 1;
+      document.getElementById('val-rate').textContent = state.tts.rate || 1;
+      document.getElementById('tts-pitch').value = state.tts.pitch || 1;
+      document.getElementById('val-pitch').textContent = state.tts.pitch || 1;
+      
       syncCells();
+    }
+
+    function initTTS() {
+      const byId = id => document.getElementById(id);
+      const populateVoices = () => {
+        if (!window.speechSynthesis) return;
+        const voices = window.speechSynthesis.getVoices();
+        const select = byId('tts-voice');
+        select.innerHTML = '<option value="">Default System Voice</option>';
+        voices.forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v.voiceURI;
+          opt.textContent = `${v.name} (${v.lang})`;
+          if(state.tts && state.tts.voiceURI === v.voiceURI) opt.selected = true;
+          select.appendChild(opt);
+        });
+      };
+
+      if (window.speechSynthesis) {
+        window.speechSynthesis.onvoiceschanged = populateVoices;
+        populateVoices();
+      }
+
+      byId('tts-voice').addEventListener('change', e => { if(!state.tts) state.tts = {}; state.tts.voiceURI = e.target.value; });
+      byId('tts-rate').addEventListener('input', e => { if(!state.tts) state.tts = {}; state.tts.rate = parseFloat(e.target.value); byId('val-rate').textContent = state.tts.rate; });
+      byId('tts-pitch').addEventListener('input', e => { if(!state.tts) state.tts = {}; state.tts.pitch = parseFloat(e.target.value); byId('val-pitch').textContent = state.tts.pitch; });
     }
 
     function syncCells() {
@@ -403,14 +476,35 @@
 
     function setMode(mode) {
       state.mode = mode;
+      localStorage.setItem('aac_use_mode', mode);
       const e = document.getElementById('btn-mode-edit');
       const u = document.getElementById('btn-mode-use');
+      
+      const ps = document.getElementById('panel-settings');
+      const pt = document.getElementById('panel-templates');
+      const exp = document.getElementById('panel-export');
+      
+      const sb = document.getElementById('sidebar');
+      const headerDiv = sb ? sb.querySelector('.mb-6') : null;
+      
       if (mode === 'edit') {
          e.className = "flex-1 py-2 font-semibold text-sm rounded bg-white shadow text-blue-600 border border-blue-200";
          u.className = "flex-1 py-2 font-semibold text-sm rounded text-gray-600 bg-transparent shadow-none border border-transparent";
+         
+         if(ps) ps.style.display = '';
+         if(pt) pt.style.display = '';
+         if(exp) exp.style.display = '';
+         if(sb) { sb.classList.remove('md:w-64'); sb.classList.add('md:w-80'); }
+         if(headerDiv) headerDiv.style.display = '';
       } else {
          u.className = "flex-1 py-2 font-semibold text-sm rounded bg-white shadow text-blue-600 border border-blue-200";
          e.className = "flex-1 py-2 font-semibold text-sm rounded text-gray-600 bg-transparent shadow-none border border-transparent";
+         
+         if(ps) ps.style.display = 'none';
+         if(pt) pt.style.display = 'none';
+         if(exp) exp.style.display = 'none';
+         if(sb) { sb.classList.remove('md:w-80'); sb.classList.add('md:w-64'); }
+         if(headerDiv) headerDiv.style.display = 'none';
       }
       renderGrid();
     }
@@ -476,12 +570,24 @@
             if(c.text && window.speechSynthesis) {
               window.speechSynthesis.cancel();
               const u = new SpeechSynthesisUtterance(c.text);
-              u.rate = 0.9;
+              const voices = window.speechSynthesis.getVoices();
+              if (state.tts && state.tts.voiceURI) {
+                const voice = voices.find(v => v.voiceURI === state.tts.voiceURI);
+                if(voice) u.voice = voice;
+              }
+              u.rate = (state.tts && state.tts.rate) ? state.tts.rate : 1;
+              u.pitch = (state.tts && state.tts.pitch) ? state.tts.pitch : 1;
+              
+              u.onstart = () => el.classList.add('speaking');
+              const clearSpk = () => el.classList.remove('speaking');
+              u.onend = clearSpk;
+              u.onerror = clearSpk;
+
               window.speechSynthesis.speak(u);
             }
             el.style.transform = 'scale(0.95)';
             el.style.opacity = '0.7';
-            setTimeout(() => { el.style.transform = ''; el.style.opacity = '1'; }, 200);
+            setTimeout(() => { if(!el.classList.contains('speaking')) el.style.transform = ''; el.style.opacity = '1'; }, 200);
           }
         };
 
